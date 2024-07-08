@@ -8,6 +8,9 @@ const {
   addMoney,
   getAccountByAccountNumber,
   getTransactions,
+  addBeneficiary,
+  getBeneficiaries,
+  deleteBeneficiary,
 } = require("../controllers/account");
 
 router.route("/create").post(createAccount);
@@ -16,5 +19,8 @@ router.route("/transfer").post(transferFund);
 router.route("/add-money").post(addMoney);
 router.route("/get-account-by-number").post(getAccountByAccountNumber);
 router.route("/transactions").post(getTransactions);
+router.route("/add-beneficiary").post(addBeneficiary);
+router.route("/beneficiaries").post(getBeneficiaries);
+router.route("/delete-beneficiary").delete(deleteBeneficiary);
 
 module.exports = router;

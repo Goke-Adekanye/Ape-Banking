@@ -10,8 +10,10 @@ const {
   validateRequestBody,
   generateAccountNumber,
   Currencies,
+  checkExistingBeneficiary,
 } = require("../utils/utils");
 const Joi = require("joi");
+const Beneficiary = require("../models/Beneficiary");
 
 const createAccount = async (req, res) => {
   req.body.user_id = req.user.userId;
@@ -301,6 +303,159 @@ const getTransactions = async (req, res) => {
   }
 };
 
+// Define the schema for the request body
+const AddBeneficiarySchema = Joi.object({
+  from_account_id: Joi.string().required(),
+  to_email: Joi.string().email().required(),
+  to_account_no: Joi.number().required(),
+});
+
+// Define the function to add a beneficiary
+const addBeneficiary = async (req, res) => {
+  try {
+    // Validate the request body
+    const validationError = validateRequestBody(AddBeneficiarySchema, req.body);
+    if (validationError) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: validationError });
+    }
+
+    const userId = req.user.userId;
+    const { from_account_id, to_email, to_account_no } = req.body;
+
+    const account = await Account.findById(from_account_id);
+    if (!account) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Account not found" });
+    }
+
+    if (account.user_id.toString() !== userId) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ error: "Unauthorized operation" });
+    }
+
+    if (await checkExistingBeneficiary(from_account_id, to_email)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Beneficiary already saved!" });
+    }
+
+    await Beneficiary.create({ from_account_id, to_email, to_account_no });
+    res.status(StatusCodes.CREATED).json({ message: "Beneficiary saved" });
+  } catch (err) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: err.message });
+  }
+};
+
+const getBeneficiarySchema = Joi.object({
+  account_id: Joi.string().required(),
+});
+
+const getBeneficiaries = async (req, res) => {
+  try {
+    // Validate the request body
+    const validationError = validateRequestBody(getBeneficiarySchema, req.body);
+    if (validationError) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: validationError });
+    }
+
+    const userId = req.user.userId;
+    const { account_id } = req.body;
+
+    const account = await Account.findById(account_id);
+    if (!account) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Account not found" });
+    }
+
+    if (account.user_id.toString() !== userId) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ error: "Unauthorized operation" });
+    }
+
+    const beneficiaries = await Beneficiary.find({
+      from_account_id: account_id,
+    })
+      .sort({ created_at: -1 })
+      .limit(10);
+
+    // Format the response
+    const formattedResponse = beneficiaries.map((item) => ({
+      _id: item._id,
+      account_no: item.to_account_no,
+      email: item.to_email,
+      created_at: item.created_at,
+    }));
+
+    res.status(StatusCodes.OK).json(formattedResponse);
+  } catch (err) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: err.message });
+  }
+};
+
+const deleteBeneficiarySchema = Joi.object({
+  beneficiary_id: Joi.string().required(),
+  account_id: Joi.string().required(),
+});
+
+const deleteBeneficiary = async (req, res) => {
+  try {
+    // Validate the request body
+    const validationError = validateRequestBody(
+      deleteBeneficiarySchema,
+      req.body
+    );
+    if (validationError) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: validationError });
+    }
+
+    const userId = req.user.userId;
+    const { beneficiary_id, account_id } = req.body;
+
+    const account = await Account.findById(account_id);
+    if (!account) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Account not found" });
+    }
+
+    if (account.user_id.toString() !== userId) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ error: "Unauthorized operation" });
+    }
+
+    // Delete beneficiary
+    const beneficiary = await Beneficiary.findByIdAndDelete(beneficiary_id);
+    if (!beneficiary) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Beneficiary not found" });
+    }
+
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "Beneficiary deleted successfully" });
+  } catch (err) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: err.message });
+  }
+};
+
 module.exports = {
   createAccount,
   getUserAccounts,
@@ -308,4 +463,7 @@ module.exports = {
   addMoney,
   getAccountByAccountNumber,
   getTransactions,
+  addBeneficiary,
+  getBeneficiaries,
+  deleteBeneficiary,
 };

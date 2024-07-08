@@ -1,6 +1,7 @@
 const Account = require("../models/Account");
 const Transfer = require("../models/Transfer");
 const Entry = require("../models/Entry");
+const Beneficiary = require("../models/Beneficiary");
 
 const Currencies = {
   USD: {
@@ -24,6 +25,14 @@ const checkExistingAccount = async (userId, currency) => {
   const existingAccount = await Account.findOne({
     user_id: userId,
     currency: currency,
+  });
+  return existingAccount !== null;
+};
+
+const checkExistingBeneficiary = async (from_account_id, to_email) => {
+  const existingAccount = await Beneficiary.findOne({
+    from_account_id,
+    to_email,
   });
   return existingAccount !== null;
 };
@@ -97,6 +106,7 @@ const generateAccountNumber = (currency) => {
 module.exports = {
   checkAccountLimit,
   checkExistingAccount,
+  checkExistingBeneficiary,
   transferTx,
   validateRequestBody,
   generateAccountNumber,

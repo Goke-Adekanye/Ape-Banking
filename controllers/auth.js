@@ -27,7 +27,7 @@ const register = async (req, res) => {
         .json({ error: "Email already in use!" });
     }
 
-    const newUser = await User.create({ ...req.body });
+    await User.create({ ...req.body });
     res.status(StatusCodes.CREATED).json();
   } catch (error) {
     res
