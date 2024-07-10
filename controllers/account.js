@@ -122,6 +122,13 @@ const transferFund = async (req, res) => {
     // console.log(toAccount);
     // console.log(fromAccount);
 
+    const fromAccountUsername = await User.findById(fromAccount.user_id).select(
+      "username -_id"
+    );
+    const toAccountUsername = await User.findById(toAccount.user_id).select(
+      "username -_id"
+    );
+
     if (toAccount.currency !== fromAccount.currency) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -140,7 +147,11 @@ const transferFund = async (req, res) => {
       amount: tr.amount,
     };
 
-    const response = await transferTx(txArg);
+    const response = await transferTx(
+      txArg,
+      fromAccountUsername,
+      toAccountUsername
+    );
     res.status(StatusCodes.CREATED).json(response);
   } catch (err) {
     return res
@@ -192,7 +203,7 @@ const addMoney = async (req, res) => {
 
     await MoneyRecord.create(moneyRecordArgs);
 
-    const entryArgs = { account_id: account._id, amount };
+    const entryArgs = { account_id: account._id, amount, username: "Paystack" };
     await Entry.create(entryArgs);
 
     await Account.findByIdAndUpdate(account._id, { $inc: { balance: amount } });

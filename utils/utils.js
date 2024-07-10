@@ -37,7 +37,7 @@ const checkExistingBeneficiary = async (from_account_id, to_email) => {
   return existingAccount !== null;
 };
 
-const transferTx = async (tr) => {
+const transferTx = async (tr, fromAccountUsername, toAccountUsername) => {
   let tx = {};
 
   try {
@@ -58,11 +58,13 @@ const transferTx = async (tr) => {
     tx.entry_in = await Entry.create({
       account_id: tr.to_account_id,
       amount: tr.amount,
+      username: fromAccountUsername.username,
     });
 
     tx.entry_out = await Entry.create({
       account_id: tr.from_account_id,
       amount: -1 * tr.amount,
+      username: toAccountUsername.username,
     });
 
     return tx;

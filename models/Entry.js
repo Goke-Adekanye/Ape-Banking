@@ -11,6 +11,9 @@ const entrySchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  username: {
+    type: String,
+  },
   created_at: {
     type: Date,
     required: true,
