@@ -30,6 +30,7 @@ const register = async (req, res) => {
     await User.create({ ...req.body });
     res.status(StatusCodes.CREATED).json();
   } catch (error) {
+    console.error("Registration error:", error);
     res
       .status(StatusCodes.BAD_REQUEST)
       .json({ error: "Registration failed. Please try again." });
