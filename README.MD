@@ -3,6 +3,7 @@
 To set up the project, follow these steps:
 
 Create a .env file in the root directory with the following variables, replacing the placeholders with your own values:
+
 MONGO_URI=<your_mongo_uri>
 JWT_SECRET=<your_jwt_secret>
 
